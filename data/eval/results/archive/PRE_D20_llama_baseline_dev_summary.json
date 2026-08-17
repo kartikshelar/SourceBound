@@ -1,0 +1,8 @@
+{
+  "split": "dev",
+  "n_items_completed": 50,
+  "n_scored": 50,
+  "n_unparseable_judge": 0,
+  "answer_correctness": 0.34,
+  "answers_with_citation_rate": 1.0
+}

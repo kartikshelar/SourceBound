@@ -1,0 +1,15 @@
+{
+  "n_reviewed": 20,
+  "n_unfilled": 0,
+  "raw_agreement": 0.65,
+  "cohens_kappa": 0.30000000000000004,
+  "judge_too_lenient": 6,
+  "judge_too_harsh": 1,
+  "docs_answerable_ceiling": {
+    "n_tagged": 20,
+    "n_docs_answerable": 7,
+    "docs_answerable_rate": 0.35,
+    "human_accuracy_on_answerable": 0.2857142857142857,
+    "note": "docs_answerable_rate is an estimated CEILING for a docs-only agent on this eval set. Items tagged 0 need maintainer knowledge absent from the docs corpus \u2014 they motivate the v1 discussion_search tool, not better retrieval."
+  }
+}

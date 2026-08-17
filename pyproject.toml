@@ -1,0 +1,22 @@
+[project]
+name = "fastapi-support-agent"
+version = "0.1.0"
+description = "Agentic FastAPI support assistant: docs RAG + agent orchestration + rigorous evals"
+authors = [
+    { name = "Kartik", email = "shelarkartik09@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "chromadb>=1.5.9",
+    "google-genai>=2.17.0",
+    "groq>=1.6.0",
+    "langgraph>=1.2.11",
+    "pydantic>=2.13.4",
+    "python-dotenv>=1.2.2",
+    "rank-bm25>=0.2.2",
+    "requests>=2.34.2",
+    "sentence-transformers>=5.7.0",
+]
+
+[tool.uv]
+package = false

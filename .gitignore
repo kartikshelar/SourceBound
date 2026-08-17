@@ -1,0 +1,18 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+chroma/
+.chroma/
+data/docs_snapshot/en/
+data/docs_snapshot/docs_src/
+
+# Raw GitHub Discussions dump (~14MB), re-derivable via
+# scripts/pull_discussions.py. The FROZEN eval set and its manifest ARE
+# committed (pre-build-checklist.md §4) — those are the versioned artifacts
+# that make results reproducible; this is just the pool they were drawn from.
+data/eval/discussions_raw.jsonl
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.langfuse/
