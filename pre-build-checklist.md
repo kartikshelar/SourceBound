@@ -173,11 +173,9 @@ Not decisions — a to-do list to tick off.
 Repo skeleton (maps to build order):
 
     fastapi-support-agent/
-    ├── CLAUDE.md            # build guardrails (§5)
     ├── README.md
     ├── decisions.md         # running decision log
     ├── pyproject.toml
-    ├── .env.example
     ├── .gitignore
     ├── data/
     │   ├── docs_snapshot/   # pinned FastAPI docs markdown
@@ -191,31 +189,31 @@ Repo skeleton (maps to build order):
     ├── app/                 # HF Spaces UI entrypoint
     └── scripts/             # pull_discussions.py · freeze_eval.py
 
-- **`.env.example` keys:** `GITHUB_TOKEN` · `GEMINI_API_KEY` · `GROQ_API_KEY` ·
-  `QDRANT_URL` · `QDRANT_API_KEY` · `LANGFUSE_PUBLIC_KEY` · `LANGFUSE_SECRET_KEY`
-  · `LANGFUSE_HOST` · `HF_TOKEN`.
+- **Env keys** (see README for the current list): `GITHUB_TOKEN` ·
+  `GROQ_API_KEY` · `LANGFUSE_PUBLIC_KEY` · `LANGFUSE_SECRET_KEY` ·
+  `LANGFUSE_HOST`.
 - **`.gitignore`:** `.env`, `.venv/`, `__pycache__/`, `*.pyc`, local vector-store
   dirs (`chroma/`), model caches. Do NOT ignore `data/eval/` (frozen set is
   meant to be versioned).
 
-## 5. Build guardrails for Claude — [CLEARED]
+## 5. Build guardrails — [CLEARED]
 
-Captured in `CLAUDE.md` at repo root (separate file). Key rules:
+Rules the build is held to, so decisions stay traceable rather than accreted:
 
-- **Model policy:** Sonnet default. Opus only when I explicitly ask. Never
-  auto-escalate; never select the Fable model.
-- **Parallelism cap:** no unbounded subagents — main cause of usage burn. One
-  task at a time unless I approve otherwise.
-- **Source of truth:** read `pre-build-checklist.md` first. If a decision isn't
-  there, ASK — don't invent architecture.
-- **Build order enforced:** retrieval core before agent layer.
-- **Conventions:** wrappers around embedding/LLM/vector-store · Pydantic tool
-  contracts · structure-aware chunking · `uv` (ask before new deps).
-- **Accountability:** build incrementally and explain each core decision —
-  especially the LangGraph graph (nodes/state/edges/why). Understand, not just
-  receive.
+- **Source of truth:** this checklist. If a decision isn't recorded here,
+  decide it deliberately and log it in `decisions.md` — don't let architecture
+  appear by accident.
+- **Build order enforced:** retrieval core before agent layer. Garbage
+  retrieval makes every agent trick worthless.
+- **Conventions:** thin swappable wrappers around embedding / LLM /
+  vector-store · Pydantic contracts on every tool · structure-aware chunking ·
+  `uv` for dependencies, added deliberately rather than reflexively.
+- **Accountability:** build incrementally and be able to explain each core
+  decision — especially the LangGraph graph (nodes / state / edges / why).
+  Every node should trace to a measurement, not to convention.
+- **Cost discipline:** free tiers only; no unbounded parallel API fan-out.
 - **Secrets:** never print or commit keys; `.env` only.
-- **Scope:** honor §1 non-goals; flag scope creep.
+- **Scope:** honor the §1 non-goals; flag scope creep instead of absorbing it.
 
 ---
 

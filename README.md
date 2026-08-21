@@ -138,10 +138,25 @@ decisions.md     running decision log — every choice, why, and what was reject
 
 ```bash
 uv sync
-cp .env.example .env          # add GROQ_API_KEY
 uv run scripts/fetch_docs_snapshot.py    # pinned FastAPI docs (0.119.1)
 uv run python -m src.ingest.index        # build the docs index
 uv run python -c "import sys; sys.path.insert(0,'src'); from agent.graph import run; print(run('How do I add OAuth2 JWT auth?')['answer'])"
+```
+
+Create a `.env` in the project root:
+
+```bash
+# Required — routing, synthesis, and the eval judge all run on Groq
+GROQ_API_KEY=
+
+# Required only to rebuild the eval set from GitHub Discussions
+GITHUB_TOKEN=
+
+# Optional — Langfuse tracing. Absent, the agent runs untraced rather than
+# failing. LANGFUSE_BASE_URL is accepted in place of LANGFUSE_HOST.
+LANGFUSE_PUBLIC_KEY=
+LANGFUSE_SECRET_KEY=
+LANGFUSE_HOST=
 ```
 
 Reproducing the eval additionally needs `scripts/pull_discussions.py` (a

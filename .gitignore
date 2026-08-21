@@ -1,4 +1,6 @@
 .env
+.env.example
+CLAUDE.md
 .venv/
 __pycache__/
 *.pyc

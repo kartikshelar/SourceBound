@@ -2,8 +2,8 @@
 Build the v0 retrieval index: chunk the pinned docs snapshot, embed each
 chunk, upsert into the vector store.
 
-v0 indexes ONLY the docs corpus (data/docs_snapshot/en/), per the build order
-in CLAUDE.md (retrieval core first, simplest defensible default). Discussions
+v0 indexes ONLY the docs corpus (data/docs_snapshot/en/), per the enforced
+build order (retrieval core first, simplest defensible default). Discussions
 are a v1 option (pre-build-checklist.md §2a) — if/when they're added as a
 second retrievable source, every ID in
 data/eval/eval_frozen_v1.manifest.json:leakage_exclusion_discussion_ids MUST

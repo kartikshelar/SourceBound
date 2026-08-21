@@ -2,8 +2,8 @@
 The LangGraph agent (§3).
 
 WHY THIS SHAPE — every node is here because a measured result put it here.
-This is the accountability condition in CLAUDE.md: the graph is designed from
-the eval, not lifted from a tutorial.
+The graph is designed from the eval, not lifted from a tutorial — every node
+below should trace to a number.
 
     route -> retrieve -> assess -> (answer | escalate) -> END
 
