@@ -74,13 +74,19 @@ ROUTE_SYSTEM = (
 ASSESS_SYSTEM = (
     "You decide whether a support question can be answered from the retrieved "
     "context — BEFORE any answer is written.\n\n"
-    "sufficient=true  — the context contains the specific information needed to "
-    "resolve the question (the API, the limitation, the cause, the fix).\n"
-    "sufficient=false — the context is merely on-topic: same feature or error, "
-    "but not the specific answer. Also false if answering would require inventing "
-    "an API, parameter, version number, or cause not present in the context.\n\n"
-    "Be strict. A wrong-but-confident support answer is worse than an honest "
-    "'I don't know'. Being about the right topic is NOT sufficient.\n\n"
+    "The test is whether a competent FastAPI engineer could REASON a useful "
+    "answer from this context — not whether the answer is spelled out "
+    "verbatim. Documentation rarely states a user's exact case; applying a "
+    "documented mechanism to their situation is a correct answer, not a guess.\n\n"
+    "sufficient=true  — the context contains the mechanism, API, limitation, or "
+    "cause needed, EVEN IF it must be applied or combined to fit the question. "
+    "A partial answer that genuinely helps counts as sufficient.\n"
+    "sufficient=false — answering would require facts simply not present: "
+    "inventing an API, parameter, version number, or root cause. Also false "
+    "when the context is only superficially on-topic (same feature name, "
+    "different problem) with nothing to reason from.\n\n"
+    "Do NOT require an explicit, verbatim answer — that bar is too high and "
+    "rejects context that would have produced a good answer.\n\n"
     'Respond with ONLY: {"sufficient": true|false, "reason": "one short clause"}'
 )
 

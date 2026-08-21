@@ -748,4 +748,42 @@ delta. Archived results live in `data/eval/results/archive/PRE_D20_llama_*`.
 lenient (0 harsh), so 30.6% is if anything a slight OVER-estimate.
 **This is now the reference number** every upgrade must beat, replacing 34.0%.
 
+## D25 — Agent v1 measured: -21.4% vs baseline, `assess` is miscalibrated
+**Result (n=42 of 50 shared items, quota-limited):**
+  baseline  12/42 = 28.6%
+  **agent     3/42 =  7.1%   delta -21.4%**
+Unlike every earlier A/B (all within ~1 item of noise) this is a large, real
+regression. Do not ship agent v1 as default.
+**Cause: it escalated on 83% of questions (35/42).** Escalation rate is
+uniform across routes (docs 86%, discussion 82%), so this is the `assess`
+node, not routing.
+**But `assess` is miscalibrated, NOT wrong in principle** — three numbers say
+the idea is sound:
+  - **When the agent DID answer: 3/7 = 42.9%**, vs baseline 28.6% overall. Its
+    positive decisions are better than the baseline's blanket "always answer".
+  - **Of the 35 escalations, 26 were SAFE** — the baseline also failed those.
+    Only **9 were lost opportunities** (baseline answered correctly).
+  - **Fewer confident fabrications: 3 vs baseline 4** (`contradicts`).
+So the sufficiency check identifies genuinely-unanswerable questions well; it
+just also rejects answerable ones.
+**Diagnosed source:** the ASSESS_SYSTEM prompt says "Be strict... Being about
+the right topic is NOT sufficient." The model applies that literally and
+demands an EXPLICIT answer in context, rejecting material it could reason
+from. Evidence from items the baseline answered correctly:
+  #13620 "Context does not contain an explicit answer to how to pass a
+         callable with its own dependencies"
+  #13991 "No specific guidance on nested query-param models is present"
+  #15936 "context lacks info about __html__ support"
+**Fix to test next (one variable):** loosen `assess` to ask "can a useful
+answer be REASONED from this context?" rather than "is the answer explicitly
+present?", keeping the ban on inventing APIs/versions. Prediction, logged in
+advance: escalation rate should fall well below 83% and the delta should
+close; if `contradicts` climbs above the baseline's 4 while it does, the
+loosening has gone too far and D19's failure mode has returned.
+**Methodological note:** this is the first experiment where the headline score
+alone would have been actively misleading. "Agent is 21 points worse" hides
+that its answers are MORE accurate than the baseline's and that 74% of its
+refusals were correct. The per-decision instrumentation (`escalated`,
+`route`, `assess_reason`) is what made the diagnosis possible in one pass.
+
 <!-- Add new decisions below as the build progresses. -->
