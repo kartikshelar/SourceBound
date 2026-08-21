@@ -36,9 +36,30 @@ of these questions have answers that are not in the corpus at all, so the real
 problem is *knowing when you cannot answer* — which is what the agent layer
 exists to do.
 
-> Agent-vs-baseline numbers are still being collected (free-tier quota limits
-> throughput to ~26 eval items/day). Early signal on 4 items: 3 of 4
-> escalations were on questions the baseline also failed.
+### The agent, measured
+
+**v1 scored 7.1% vs the 28.6% baseline** on 42 items — a large, real
+regression, not noise. It escalated on **83%** of questions.
+
+The headline number alone would have been misleading, and the per-decision
+logging is what showed why:
+
+| | v1 |
+|---|---|
+| Accuracy **when it did answer** | **42.9%** (vs 28.6% baseline) |
+| Escalations where the baseline **also failed** | 26 of 35 |
+| Escalations that were **lost opportunities** | 9 of 35 |
+| Confident fabrications (`contradicts`) | 3 (vs baseline 4) |
+
+So the sufficiency check finds unanswerable questions well — 74% of its
+refusals were correct, and it fabricates less than the baseline. It was simply
+miscalibrated: the prompt demanded an *explicit* answer in context, so it also
+rejected questions it could have reasoned through.
+
+v2 loosens that to "can a useful answer be **reasoned** from this context?"
+Numbers pending — free-tier quota caps throughput at ~26 eval items/day.
+The falsification test is logged in advance: if `contradicts` rises above the
+baseline's 4 while escalations fall, the loosening went too far.
 
 ---
 
@@ -125,6 +146,35 @@ uv run python -c "import sys; sys.path.insert(0,'src'); from agent.graph import 
 
 Reproducing the eval additionally needs `scripts/pull_discussions.py` (a
 GitHub token) and `src/ingest/index_discussions.py`.
+
+## Running it as a service
+
+```bash
+uv run fastapi dev app/main.py     # http://127.0.0.1:8000
+```
+
+| Route | |
+|---|---|
+| `POST /ask` | Run the agent |
+| `GET /health` | Liveness, `graph_ready`, `tracing` |
+| `GET /` | Minimal UI |
+| `GET /docs` | OpenAPI |
+
+`/ask` returns the agent's **decisions**, not just an answer — `escalated`,
+`route`, `assess_reason`, `citations`, `latency_ms`. Escalation is the
+behaviour the system exists to demonstrate, and a caller cannot act on
+"insufficient context" unless the API says so.
+
+Operational notes: the graph and its ~400MB embedding model are built once at
+startup (not per request); upstream quota exhaustion maps to `503` +
+`Retry-After` rather than a `500`, since the caller's request was valid.
+
+**Tracing** (optional): set `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` and
+each run reports `route`, `escalated`, `assess_reason`, and per-tier LLM
+spans. Without credentials the agent runs untraced rather than failing —
+tracing must never break the thing it observes. `/health` reports whether
+traces are actually flowing, since silent degradation otherwise looks
+identical to no traffic.
 
 ## Known limitations
 
