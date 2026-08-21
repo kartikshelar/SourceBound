@@ -40,7 +40,14 @@ def _init() -> Any:
         from langfuse import Langfuse
 
         kwargs = {"public_key": public, "secret_key": secret}
-        host = os.environ.get("LANGFUSE_HOST", "").strip()
+        # Accept either spelling: Langfuse's own docs use LANGFUSE_HOST, but
+        # LANGFUSE_BASE_URL is common in their SDK examples. Rejecting a
+        # reasonable spelling would fail silently (tracing simply never starts),
+        # which is the worst kind of config bug.
+        host = (
+            os.environ.get("LANGFUSE_HOST", "").strip()
+            or os.environ.get("LANGFUSE_BASE_URL", "").strip()
+        )
         if host:
             kwargs["host"] = host
         _client = Langfuse(**kwargs)
