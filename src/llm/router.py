@@ -31,6 +31,8 @@ from google.genai.errors import ClientError as GeminiClientError
 from groq import APIStatusError as GroqAPIStatusError
 from groq import Groq
 
+from llm.tracing import trace_llm_call
+
 load_dotenv()
 
 MAX_CALLS_PER_SESSION = 500
@@ -198,6 +200,9 @@ class LLMRouter:
             try:
                 text = self._dispatch(provider, model, prompt, system)
                 self._call_count += 1
+                # Best-effort telemetry; no-ops without Langfuse credentials and
+                # never raises, so tracing cannot break inference.
+                trace_llm_call(model, provider, tier.value, len(prompt))
                 return LLMResponse(text=text, model=model, provider=provider)
             except (GeminiClientError, GroqAPIStatusError) as e:
                 if _is_daily_quota_error(e):

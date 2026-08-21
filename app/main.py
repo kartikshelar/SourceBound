@@ -26,6 +26,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from agent.graph import build_graph  # noqa: E402
 from llm.router import DailyQuotaExhausted, LLMRouter  # noqa: E402
+from llm.tracing import is_enabled as tracing_enabled  # noqa: E402
+from llm.tracing import trace_run  # noqa: E402
 
 # Built once at startup: the graph loads a ~400MB embedding model and opens the
 # vector store. Doing that per request would add seconds of latency to every
@@ -78,8 +80,17 @@ class AskResponse(BaseModel):
 
 @app.get("/health")
 def health() -> dict:
-    """Liveness + whether the agent graph actually came up."""
-    return {"status": "ok", "graph_ready": "graph" in _state}
+    """
+    Liveness, plus whether the graph came up and whether traces are actually
+    being exported. `tracing` is reported because tracing degrades silently by
+    design — without this an operator cannot tell "no traces" from
+    "no traffic".
+    """
+    return {
+        "status": "ok",
+        "graph_ready": "graph" in _state,
+        "tracing": tracing_enabled(),
+    }
 
 
 @app.post("/ask", response_model=AskResponse)
@@ -90,7 +101,9 @@ def ask(req: AskRequest) -> AskResponse:
 
     t0 = time.perf_counter()
     try:
-        state = graph.invoke({"question": req.question})
+        with trace_run("agent.ask", req.question) as record:
+            state = graph.invoke({"question": req.question})
+            record(state)
     except DailyQuotaExhausted as e:
         # 503 + Retry-After is the honest signal: the service is temporarily
         # unavailable through no fault of the caller's request.
