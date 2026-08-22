@@ -786,4 +786,38 @@ that its answers are MORE accurate than the baseline's and that 74% of its
 refusals were correct. The per-decision instrumentation (`escalated`,
 `route`, `assess_reason`) is what made the diagnosis possible in one pass.
 
+## D26 — Agent v2 (loosened assess): fix worked, but traded refusals for fabrication
+**Result (n=20 of 50, quota-limited, PROVISIONAL):**
+  baseline 9/20 = 45.0%   agent 6/20 = 30.0%   delta -15.0%
+Note the baseline scores 45% on THIS subset vs 30.6% over all 49 items, so the
+-15% is inflated by subset variance. Do not quote it as final.
+
+| | v1 (strict) | v2 (loosened) | baseline |
+|---|---|---|---|
+| score | 7.1% | 30.0% | 45.0%* |
+| escalation rate | 83% | **35%** | — |
+| accuracy when it answered | 42.9% | **46.2%** | — |
+| `contradicts` | 3 | **3** | **1** |
+
+**The D25 prediction held on both halves.** Escalation fell 83% -> 35% as
+intended, and accuracy-when-answering stayed above the baseline (46.2% vs
+45.0% on this subset). But the warned-of failure mode appeared: `contradicts`
+is 3 against the baseline's 1 on the same items. That is above the baseline
+though still under the absolute threshold of 4 stated in D25 — a warning, not
+yet a verdict.
+**Which fabrications, and why it matters:** #14462 and #14184 were items the
+baseline judged `omits` — so the agent converted two honest failures into
+confident wrong answers, strictly worse for a user. Only #13550 was a genuine
+regression from a correct baseline answer. Meanwhile 3 of the 7 escalations
+were on questions the baseline answered correctly (down from 9 of 35 in v1,
+so escalation precision did not degrade much while the rate more than halved).
+**Reading:** v1 and v2 bracket the right setting. v1 refused too much
+(83% escalation, 7.1%); v2 refuses too little on the hard cases and
+fabricates instead. The `assess` node is doing real work — accuracy when it
+chooses to answer beats the baseline in both versions — but the
+sufficient/insufficient boundary is not yet calibrated.
+**Do not ship v2 as-is.** Finish all 50 items first: at n=20 one item is 5
+points, and the `contradicts` gap (3 vs 1) is two items. Both numbers are
+inside the range where subset variance dominates.
+
 <!-- Add new decisions below as the build progresses. -->
