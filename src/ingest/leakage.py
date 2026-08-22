@@ -77,6 +77,22 @@ def filter_leakage(
     by_id = [c for c in candidates if c["discussion_id"] not in eval_ids]
     n_excluded_by_id = n_input - len(by_id)
 
+    # Every candidate was already excluded by ID — nothing left to compare, and
+    # embedding an empty list yields a 0-dim array that crashes the matmul.
+    # Returning cleanly matters: "nothing to index" is a legitimate outcome
+    # (e.g. re-running over a candidate set the eval set fully covers), not an
+    # error condition.
+    if not by_id:
+        if write_audit:
+            AUDIT_PATH.parent.mkdir(parents=True, exist_ok=True)
+            AUDIT_PATH.write_text("", encoding="utf-8")
+        return [], LeakageReport(
+            n_input=n_input,
+            n_excluded_by_id=n_excluded_by_id,
+            n_excluded_by_similarity=0,
+            n_kept=0,
+        )
+
     eval_vecs = np.asarray(embedder.embed_documents([e["title"] for e in eval_items]))
     cand_vecs = np.asarray(embedder.embed_documents([c["title"] for c in by_id]))
     sims = cand_vecs @ eval_vecs.T  # both L2-normalised -> cosine
