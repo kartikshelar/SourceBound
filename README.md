@@ -191,6 +191,29 @@ tracing must never break the thing it observes. `/health` reports whether
 traces are actually flowing, since silent degradation otherwise looks
 identical to no traffic.
 
+## Tests
+
+```bash
+uv run pytest tests/ -q      # 24 tests, ~3s, no API keys needed
+```
+
+Chosen by blast radius — the logic that fails *silently* rather than loudly:
+
+- **Chunking** — a broken `{* file ln[a:b] *}` tag does not raise. It yields a
+  chunk with prose and no code that embeds and retrieves normally while
+  quietly degrading every answer downstream.
+- **Leakage guard** — if this stops working, the agent retrieves the answer
+  key and the eval reports a great score that measures nothing.
+- **Judge parsing** — locks the invariant that the score is *derived from the
+  verdict*, never read from a model-emitted `score` field, and asserts the
+  two-stage isolation directly (the candidate must be absent from the
+  claim-extraction prompt).
+
+The suite stubs the embedder and LLM router, so it needs no keys, downloads no
+models, and cannot be broken by a provider changing its free tier. It caught a
+real bug on first run: when every candidate was excluded by ID,
+`embed_documents([])` produced a 0-dim array and the cosine matmul raised.
+
 ## Known limitations
 
 - Free-tier quota caps throughput at ~26 eval items/day, so the 199-item

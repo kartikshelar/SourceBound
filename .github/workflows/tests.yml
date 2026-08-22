@@ -1,0 +1,27 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      # The suite stubs the embedder and the LLM router, so it needs no API
+      # keys and downloads no models — it runs in seconds and cannot be broken
+      # by an upstream provider changing its free tier, which has already
+      # happened once mid-build (see decisions.md D20).
+      - name: Run tests
+        run: uv run pytest tests/ -q
