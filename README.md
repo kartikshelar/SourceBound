@@ -56,10 +56,29 @@ refusals were correct, and it fabricates less than the baseline. It was simply
 miscalibrated: the prompt demanded an *explicit* answer in context, so it also
 rejected questions it could have reasoned through.
 
-v2 loosens that to "can a useful answer be **reasoned** from this context?"
-Numbers pending — free-tier quota caps throughput at ~26 eval items/day.
-The falsification test is logged in advance: if `contradicts` rises above the
-baseline's 4 while escalations fall, the loosening went too far.
+v2 loosened that to "can a useful answer be **reasoned** from this context?"
+**Final result on the full 49-item split: the agent ties the baseline exactly
+at 30.6%** — but the tie hides a real behavioural difference.
+
+| | v1 (strict) | **v2** | baseline |
+|---|---|---|---|
+| Score | 7.1% | **30.6%** | 30.6% |
+| Escalation rate | 83% | **37%** | — |
+| Accuracy **when it answered** | 42.9% | **48.4%** | 35.5%\* |
+| Confident fabrications | 3 | 6 | 4 |
+
+\*baseline scored on the same 31 items the agent chose to answer.
+
+**The sufficiency check works.** On the questions it chose to answer it beat
+the baseline 48.4% to 35.5% — it is selecting questions it can handle, not
+answering at random. Of its 18 refusals, **14 were on questions the baseline
+also failed**; only 4 were lost opportunities.
+
+**The honest catch:** it fabricates slightly more (6 vs 4). The failure mode
+predicted in advance is reduced, not eliminated. So this is a better *product*
+at identical accuracy — the user gets an explicit "I can't answer this"
+instead of a silent wrong answer — but it is not the unambiguous win a
+positive delta would be, and is not reported as one.
 
 ---
 

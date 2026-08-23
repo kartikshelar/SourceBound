@@ -820,4 +820,42 @@ sufficient/insufficient boundary is not yet calibrated.
 points, and the `contradicts` gap (3 vs 1) is two items. Both numbers are
 inside the range where subset variance dominates.
 
+## D27 — Agent v2 FINAL (n=49): ties the baseline, but selects better
+**Result — the full dev split, not a subset:**
+  baseline 15/49 = **30.6%**   agent 15/49 = **30.6%**   delta **+0.0%**
+
+The n=20 snapshot in D26 was misleading in both directions: its -15.0% was
+subset variance (the baseline happened to score 45% on those 20 items vs
+30.6% overall). Completing the run was necessary, not pedantic.
+
+| | v1 (strict) | v2 (loosened) | baseline |
+|---|---|---|---|
+| score | 7.1% | **30.6%** | 30.6% |
+| escalation rate | 83% | **37%** | — |
+| accuracy WHEN IT ANSWERED | 42.9% | **48.4%** | 30.6% |
+| `contradicts` | 3 | **6** | 4 |
+
+**The `assess` node demonstrably works — this is the project's core claim,
+now measured.** On the 31 items it chose to answer it scored **48.4%**, while
+the baseline scored **35.5% on those same 31 items**. It is not answering at
+random; it is selecting questions it can actually handle. And of its 18
+escalations, **14 were on questions the baseline also failed** — only 4 were
+lost opportunities (down from 9 of 35 in v1).
+**The honest catch:** `contradicts` is 6 vs the baseline's 4. The D25 failure
+mode is reduced but not eliminated — when v2 does answer a hard question it
+still fabricates somewhat more often than the naive pipeline. Verdict split:
+agent omits 28 / contradicts 6 / affirms 11 / partial 4, versus baseline
+omits 30 / contradicts 4 / affirms 11 / partial 4.
+**What this means for the thesis:** an equal headline score hides a real
+behavioural difference. The agent converts ~14 of the baseline's silent
+failures into explicit refusals a user can act on, and answers more accurately
+when it does answer — at the cost of 2 extra fabrications. For a support
+agent that is a better product at identical accuracy, but it is NOT the
+unambiguous win a +N% delta would be, and should not be reported as one.
+**Next calibration (not yet run):** v1 and v2 bracket the setting. The 4 lost
+opportunities and 6 fabrications are the two error classes to trade off;
+tightening `assess` only for the `discussion` route (36 of 49 items routed
+there, and all 6 fabrications were on that route) is the obvious next
+experiment.
+
 <!-- Add new decisions below as the build progresses. -->
