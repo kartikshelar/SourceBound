@@ -123,9 +123,23 @@ class OnnxEmbeddingModel:
         self.model_name = str(path)
         self._tok = Tokenizer.from_file(str(path / "tokenizer.json"))
         self._tok.enable_truncation(max_length=512)
-        self._tok.enable_padding()
+        # Pad to the longest item in the batch, capped at the model's 512-token
+        # limit. Truncation alone does not bound the padded width when a batch
+        # mixes lengths, and a wider tensor means a proportionally larger
+        # activation allocation on a memory-constrained instance.
+        self._tok.enable_padding(length=None, pad_to_multiple_of=None)
+        # Constrain onnxruntime's memory behaviour. By default it reserves a
+        # large arena on the FIRST inference (not at session load), which is
+        # why /health passed while /ask died after ~10s on a 512MB instance:
+        # startup allocates the graph, the first real embed allocates the
+        # arena, and the container is killed before the app can respond.
+        opts = ort.SessionOptions()
+        opts.enable_cpu_mem_arena = False   # allocate per-run instead of reserving a pool
+        opts.enable_mem_pattern = False     # pattern planning pre-allocates for the largest seen shape
+        opts.intra_op_num_threads = 1       # each thread carries its own workspace
+        opts.inter_op_num_threads = 1
         self._sess = ort.InferenceSession(
-            str(path / "model.onnx"), providers=["CPUExecutionProvider"]
+            str(path / "model.onnx"), opts, providers=["CPUExecutionProvider"]
         )
 
     def _encode(self, texts: list[str]) -> list[list[float]]:
