@@ -16,9 +16,9 @@ services:
       # Set these in the Render dashboard, not here.
       - key: GROQ_API_KEY
         sync: false
-      # Required: the deployed service embeds QUERIES through Gemini's REST
-      # endpoint at request time, because a local bge model does not fit a
-      # 512MB instance (the first deploy was OOM-killed).
+      # Optional. Query embedding runs locally via ONNX (EMBEDDING_PROVIDER=onnx
+      # in the Dockerfile), so no embedding API is needed. Only set this if you
+      # switch to EMBEDDING_PROVIDER=gemini.
       - key: GEMINI_API_KEY
         sync: false
       # Optional tracing; absent, the agent runs untraced rather than failing.

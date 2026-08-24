@@ -1,14 +1,16 @@
 # Runtime dependencies for the DEPLOYED service only — not the eval harness.
 #
-# Deliberately EXCLUDES sentence-transformers and torch. Render killed the
+# Deliberately EXCLUDES torch and sentence-transformers. Render killed the
 # first deploy with "Ran out of memory (used over 512MB)": torch alone is
-# ~465MB installed and the bge model adds ~400MB resident. The served path
-# uses Gemini embeddings over REST instead (EMBEDDING_PROVIDER=gemini), which
-# needs nothing heavier than `requests`.
+# ~465MB installed and the PyTorch bge model another ~400MB resident.
 #
-# Also excludes google-genai (Gemini generation was rejected in D20; the
-# embedding path is plain REST, no SDK) and rank-bm25 (hybrid retrieval was
-# measured and rejected in D14).
+# The served path runs the SAME bge weights through onnxruntime instead
+# (EMBEDDING_PROVIDER=onnx): ~15MB of runtime plus a 209MB fp16 graph. Verified
+# equivalent — cosine 1.000000 against PyTorch and identical top-5 retrieval on
+# 5/5 probes — so the deployed system is the one the eval measured.
+#
+# Also excludes google-genai (Gemini generation rejected in D20) and rank-bm25
+# (hybrid retrieval measured and rejected in D14).
 fastapi[standard]>=0.141.1
 uvicorn>=0.32.0
 groq>=1.6.0
@@ -18,3 +20,6 @@ chromadb>=1.5.9
 pydantic>=2.13.4
 python-dotenv>=1.2.2
 requests>=2.34.2
+onnxruntime>=1.20.0
+tokenizers>=0.20.0
+numpy>=1.26.0

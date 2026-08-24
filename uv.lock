@@ -797,6 +797,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "onnxruntime" },
     { name = "pytest" },
 ]
 
@@ -816,7 +817,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.1.1" }]
+dev = [
+    { name = "onnxruntime", specifier = ">=1.28.0" },
+    { name = "pytest", specifier = ">=9.1.1" },
+]
 
 [[package]]
 name = "fastar"
