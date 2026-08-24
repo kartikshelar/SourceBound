@@ -37,6 +37,22 @@ _state: dict = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Fail loudly on a missing/empty index. Chroma returns an empty collection
+    # rather than raising, so without this the service boots, reports healthy,
+    # and answers every question with zero retrieved context — a deployment
+    # failure that looks like a working system. Verified: pointing CHROMA_DIR
+    # at a nonexistent path yields count()==0 and no error.
+    from retrieval.store import VectorStore
+
+    n_docs = VectorStore(collection_name="fastapi_docs").count()
+    if n_docs == 0:
+        raise RuntimeError(
+            "Docs index is empty or missing. Build it with "
+            "`python -m src.ingest.index`, or set CHROMA_DIR to the directory "
+            "holding a prebuilt index."
+        )
+    _state["n_docs"] = n_docs
+
     _state["router"] = LLMRouter()
     _state["graph"] = build_graph(_state["router"])
     yield
@@ -89,6 +105,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "graph_ready": "graph" in _state,
+        "indexed_chunks": _state.get("n_docs", 0),
         "tracing": tracing_enabled(),
     }
 

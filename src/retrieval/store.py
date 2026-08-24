@@ -4,11 +4,20 @@ Chroma (local, zero-infra) -> v1 swaps to Qdrant Cloud (native hybrid search)
 behind this same interface.
 """
 
+import os
 from pathlib import Path
 
 import chromadb
 
-DEFAULT_PERSIST_DIR = Path(__file__).resolve().parent.parent.parent / "chroma"
+# Repo-root-relative by default, overridable via CHROMA_DIR. The env var exists
+# for deployment: the path resolution below happens to be correct inside the
+# container too, but only because the directory depth coincides — relying on
+# that would break the moment the layout changed, and it would fail at query
+# time with an empty collection rather than at startup.
+DEFAULT_PERSIST_DIR = Path(
+    os.environ.get("CHROMA_DIR")
+    or Path(__file__).resolve().parent.parent.parent / "chroma"
+)
 COLLECTION_NAME = "fastapi_docs"
 
 

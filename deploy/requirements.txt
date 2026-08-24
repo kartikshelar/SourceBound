@@ -1,0 +1,14 @@
+# Runtime dependencies only — the Space serves the agent, it does not run the
+# eval harness. Excludes google-genai, rank-bm25 and pytest: hybrid retrieval
+# and the Gemini provider were both evaluated and rejected (decisions.md D14,
+# D20), so shipping them would add image weight for code the served path never
+# touches.
+fastapi[standard]>=0.141.1
+uvicorn>=0.32.0
+groq>=1.6.0
+langgraph>=1.2.11
+langfuse>=4.14.4
+chromadb>=1.5.9
+sentence-transformers>=5.7.0
+pydantic>=2.13.4
+python-dotenv>=1.2.2
