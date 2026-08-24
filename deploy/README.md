@@ -1,74 +1,62 @@
-# Deploying to Hugging Face Spaces
+# Deploying SourceBound
 
-The Space serves the agent only — it does not run the eval harness.
+The deployed service serves the agent only — it does not run the eval harness.
 
-## Why the index is uploaded, not built
+## Why not Hugging Face Spaces
 
-The Chroma index (~98MB, 5,312 chunks) is **not** in the git repo, and the
-Dockerfile does **not** rebuild it. Embedding those chunks on CPU takes ~14
-minutes, which exceeds the Space healthcheck window on every cold start and
-would make a working system look broken. The index is a build artifact, so it
-ships like one.
+HF now requires a PRO subscription for any compute-backed Space. Only *Static*
+Spaces are free, and those are browser-only — they cannot run a Python process,
+call Groq, or query a Chroma index. So HF is out unless you pay.
 
-Consequence: **the index must be built locally and pushed to the Space.**
+Render's free web-service tier runs the same Dockerfile with no card required.
 
-## Steps
+## Why the index is committed rather than built
 
-**1. Build the index locally** (skip if `chroma/` already exists)
+`chroma/` (~98MB, 5,312 chunks) is committed via **Git LFS**. Building it
+instead would mean embedding those chunks on CPU — roughly 14 minutes — and
+Render's free tier has no persistent disk, so that rebuild would repeat on
+every cold start and blow past the healthcheck window. The index is a build
+artifact, so it ships like one.
 
-```bash
-uv run scripts/fetch_docs_snapshot.py
-uv run python -m src.ingest.index
-uv run python -m src.ingest.index_discussions   # optional: discussion route
-```
+This also makes the repo self-contained: a clone gets a working system without
+a 14-minute build step.
 
-**2. Create the Space**
+## Deploying to Render
 
-At https://huggingface.co/new-space — choose **Docker** as the SDK (not
-Gradio/Streamlit; this serves a FastAPI app on port 7860).
+1. Push this repo to GitHub (LFS objects included).
+2. At [dashboard.render.com](https://dashboard.render.com) → **New → Blueprint**,
+   point it at the repo. `render.yaml` supplies the rest.
+3. Set **`GROQ_API_KEY`** in the service's Environment tab.
+   Optionally add `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` /
+   `LANGFUSE_HOST` for tracing — without them the agent runs untraced rather
+   than failing.
 
-**3. Add the secret**
-
-Space → Settings → *Variables and secrets* → add `GROQ_API_KEY`.
-Optionally `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` / `LANGFUSE_HOST`
-for tracing — without them the agent runs untraced rather than failing.
-
-**4. Push**
+Or run it anywhere else that accepts a Dockerfile:
 
 ```bash
-git clone https://huggingface.co/spaces/<user>/<space> hf-space
-cd hf-space
-
-cp ../deploy/Dockerfile ../deploy/requirements.txt .
-cp -r ../src ../app ../chroma .
-
-git lfs install
-git lfs track "chroma/**"          # 98MB index exceeds the normal file limit
-git add .gitattributes .
-git commit -m "Deploy SourceBound"
-git push
+docker build -f deploy/Dockerfile -t sourcebound .
+docker run -p 8000:8000 -e GROQ_API_KEY=... sourcebound
 ```
 
-## Verifying the deploy
+## Verifying a deploy
 
 ```
-GET /health  ->  {"status":"ok","graph_ready":true,"indexed_chunks":1645,"tracing":true}
+GET /health  ->  {"status":"ok","graph_ready":true,"indexed_chunks":1645,"tracing":false}
 ```
 
-`indexed_chunks` is the field that matters. Chroma returns an *empty
-collection* rather than an error when the index is missing, so without that
-number a broken deploy would boot, report healthy, and answer every question
-with no retrieved context — a failure that looks like success. Startup now
-refuses to come up at all if the docs index is empty.
-
-`CHROMA_DIR` overrides the index location if you mount it elsewhere.
+**`indexed_chunks` is the field that matters.** Chroma returns an *empty
+collection* rather than an error when the index is missing, so without it a
+broken deploy would boot, report healthy, and answer every question with zero
+retrieved context — a failure that looks like success. Startup now refuses to
+come up at all if the docs index is empty.
 
 ## Expected behaviour
 
-Free-tier Groq quota is shared across the Space's users. When it is exhausted
-`/ask` returns **503 with `Retry-After`**, not a 500 — the caller's request
-was valid and the condition is temporary.
-
-First request after a cold start is slow (the graph builds a ~400MB embedding
-model into memory); subsequent ones are not, since it is built once at startup
-rather than per request.
+- **Cold starts are slow.** Render's free tier sleeps a service after ~15
+  minutes idle; the next request takes ~60s to wake it, plus the graph builds a
+  ~400MB embedding model into memory. Subsequent requests are fast — the model
+  loads once at startup, not per request.
+- **Quota is shared.** Groq's free tier is per-key, not per-user, so the
+  Space's visitors share one budget. When it is exhausted `/ask` returns
+  **503 with `Retry-After`**, not a 500 — the request was valid and the
+  condition is temporary.

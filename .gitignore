@@ -4,7 +4,10 @@ CLAUDE.md
 .venv/
 __pycache__/
 *.pyc
-chroma/
+# chroma/ is COMMITTED via Git LFS so the deployed service has a working
+# index without a ~14min CPU rebuild on every cold start (Render free tier has
+# no persistent disk). See deploy/README.md.
+# chroma/
 .chroma/
 data/docs_snapshot/en/
 data/docs_snapshot/docs_src/

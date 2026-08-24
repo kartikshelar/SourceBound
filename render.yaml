@@ -1,0 +1,25 @@
+# Render blueprint. Deploys the agent as a Docker web service straight from
+# this repo — no separate deploy repo to keep in sync.
+#
+# The Chroma index is committed via Git LFS rather than rebuilt at startup:
+# embedding 5,312 chunks on CPU takes ~14 minutes, the free tier has no
+# persistent disk, and a rebuild would therefore repeat on every cold start.
+services:
+  - type: web
+    name: sourcebound
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      # Set this in the Render dashboard, not here.
+      - key: GROQ_API_KEY
+        sync: false
+      # Optional tracing; absent, the agent runs untraced rather than failing.
+      - key: LANGFUSE_PUBLIC_KEY
+        sync: false
+      - key: LANGFUSE_SECRET_KEY
+        sync: false
+      - key: LANGFUSE_HOST
+        sync: false
