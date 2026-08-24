@@ -26,8 +26,22 @@ from dataclasses import dataclass
 from enum import Enum
 
 from dotenv import load_dotenv
-from google import genai
-from google.genai.errors import ClientError as GeminiClientError
+# Gemini is OPTIONAL. It was evaluated and rejected (D20: 20 requests/day on
+# the free tier), so the deployment image does not install google-genai — and
+# a hard import here crashed the container at startup before anything ran.
+# An unused provider must never be able to break the service.
+try:
+    from google import genai
+    from google.genai.errors import ClientError as GeminiClientError
+
+    _GEMINI_AVAILABLE = True
+except ImportError:  # pragma: no cover - exercised only in slim deployments
+    genai = None
+
+    class GeminiClientError(Exception):
+        """Placeholder so except-clauses stay valid when Gemini is absent."""
+
+    _GEMINI_AVAILABLE = False
 from groq import APIStatusError as GroqAPIStatusError
 from groq import Groq
 
@@ -167,7 +181,13 @@ class LLMRouter:
         if tier_overrides:
             self._tier_models.update(tier_overrides)
 
-    def _get_gemini(self) -> genai.Client:
+    def _get_gemini(self):
+        if not _GEMINI_AVAILABLE:
+            raise RuntimeError(
+                "A tier is routed to Gemini but google-genai is not installed. "
+                "Install it, or point that tier at another provider — the "
+                "deployment image ships without it by design."
+            )
         if self._gemini_client is None:
             api_key = os.environ.get("GEMINI_API_KEY")
             if not api_key:
