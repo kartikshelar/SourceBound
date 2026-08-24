@@ -14,6 +14,7 @@ Usage:
     uv run -m src.ingest.index
 """
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -27,6 +28,8 @@ from retrieval.store import VectorStore
 DOCS_ROOT = Path(__file__).resolve().parent.parent.parent / "data" / "docs_snapshot" / "en"
 DOCS_SRC_ROOT = Path(__file__).resolve().parent.parent.parent / "data" / "docs_snapshot" / "docs_src"
 BATCH_SIZE = 32
+# Set RESET_INDEX=1 to rebuild from scratch instead of resuming.
+RESET_INDEX = os.environ.get("RESET_INDEX", "").strip() == "1"
 
 
 def main() -> None:
@@ -41,12 +44,30 @@ def main() -> None:
     embedder = EmbeddingModel()
 
     store = VectorStore()
-    store.reset()
+
+    # Resume rather than reset. A remote embedding provider (Gemini) is
+    # rate-limited and slow enough that a run can be interrupted partway —
+    # when that happened, restarting from zero would re-spend every API call
+    # already made. Skipping ids already present makes a re-run cheap and
+    # makes a partial index self-healing instead of a silent 160-of-1645.
+    existing: set[str] = set()
+    if not RESET_INDEX:
+        try:
+            existing = set(store._collection.get(include=[])["ids"])
+        except Exception:
+            existing = set()
+    if RESET_INDEX:
+        store.reset()
+    elif existing:
+        print(f"  resuming: {len(existing)} chunks already indexed")
+
+    pending = [c for c in chunks if c.id not in existing]
+    print(f"  {len(pending)} to embed")
 
     print("Embedding + indexing...")
     t0 = time.time()
-    for i in range(0, len(chunks), BATCH_SIZE):
-        batch = chunks[i : i + BATCH_SIZE]
+    for i in range(0, len(pending), BATCH_SIZE):
+        batch = pending[i : i + BATCH_SIZE]
         texts = [c.text for c in batch]
         embeddings = embedder.embed_documents(texts)
         ids = [c.id for c in batch]
@@ -59,7 +80,7 @@ def main() -> None:
             for c in batch
         ]
         store.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
-        print(f"  {min(i + BATCH_SIZE, len(chunks))}/{len(chunks)}")
+        print(f"  {min(i + BATCH_SIZE, len(pending))}/{len(pending)}", flush=True)
 
     elapsed = time.time() - t0
     print(f"\nIndexed {store.count()} chunks in {elapsed:.1f}s")

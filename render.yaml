@@ -13,8 +13,13 @@ services:
     plan: free
     healthCheckPath: /health
     envVars:
-      # Set this in the Render dashboard, not here.
+      # Set these in the Render dashboard, not here.
       - key: GROQ_API_KEY
+        sync: false
+      # Required: the deployed service embeds QUERIES through Gemini's REST
+      # endpoint at request time, because a local bge model does not fit a
+      # 512MB instance (the first deploy was OOM-killed).
+      - key: GEMINI_API_KEY
         sync: false
       # Optional tracing; absent, the agent runs untraced rather than failing.
       - key: LANGFUSE_PUBLIC_KEY

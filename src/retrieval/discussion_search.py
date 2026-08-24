@@ -17,7 +17,7 @@ it is not for version-pinned docs.
 
 from pydantic import BaseModel, Field
 
-from retrieval.embeddings import EmbeddingModel
+from retrieval.embeddings import Embedder, EmbeddingModel
 from retrieval.store import VectorStore
 
 COLLECTION = "fastapi_discussions"
@@ -42,7 +42,7 @@ class DiscussionSearchOutput(BaseModel):
 
 
 class DiscussionSearch:
-    def __init__(self, embedder: EmbeddingModel | None = None):
+    def __init__(self, embedder: Embedder | None = None):
         # Allow sharing one embedder with doc_search — loading bge twice costs
         # ~400MB and a few seconds for no benefit.
         self._embedder = embedder or EmbeddingModel()

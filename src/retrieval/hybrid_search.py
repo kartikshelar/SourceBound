@@ -33,7 +33,7 @@ from rank_bm25 import BM25Okapi
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from retrieval.bm25 import tokenize
-from retrieval.embeddings import EmbeddingModel
+from retrieval.embeddings import Embedder, EmbeddingModel
 from retrieval.search import DocSearchInput, DocSearchOutput, DocSearchResult
 from retrieval.store import VectorStore
 
@@ -48,7 +48,7 @@ class HybridSearch:
     def __init__(
         self,
         collection_name: str = "fastapi_docs",
-        embedder: EmbeddingModel | None = None,
+        embedder: Embedder | None = None,
         rrf_k: int = RRF_K,
         candidate_pool: int = CANDIDATE_POOL,
     ):

@@ -1,14 +1,20 @@
-# Runtime dependencies only — the Space serves the agent, it does not run the
-# eval harness. Excludes google-genai, rank-bm25 and pytest: hybrid retrieval
-# and the Gemini provider were both evaluated and rejected (decisions.md D14,
-# D20), so shipping them would add image weight for code the served path never
-# touches.
+# Runtime dependencies for the DEPLOYED service only — not the eval harness.
+#
+# Deliberately EXCLUDES sentence-transformers and torch. Render killed the
+# first deploy with "Ran out of memory (used over 512MB)": torch alone is
+# ~465MB installed and the bge model adds ~400MB resident. The served path
+# uses Gemini embeddings over REST instead (EMBEDDING_PROVIDER=gemini), which
+# needs nothing heavier than `requests`.
+#
+# Also excludes google-genai (Gemini generation was rejected in D20; the
+# embedding path is plain REST, no SDK) and rank-bm25 (hybrid retrieval was
+# measured and rejected in D14).
 fastapi[standard]>=0.141.1
 uvicorn>=0.32.0
 groq>=1.6.0
 langgraph>=1.2.11
 langfuse>=4.14.4
 chromadb>=1.5.9
-sentence-transformers>=5.7.0
 pydantic>=2.13.4
 python-dotenv>=1.2.2
+requests>=2.34.2

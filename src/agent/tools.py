@@ -20,15 +20,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agent.state import RetrievedChunk
 from retrieval.discussion_search import DiscussionSearch, DiscussionSearchInput
-from retrieval.embeddings import EmbeddingModel
+from retrieval.embeddings import Embedder, EmbeddingModel
 from retrieval.search import DocSearch, DocSearchInput
 
-_embedder: EmbeddingModel | None = None
+_embedder: Embedder | None = None
 _doc_search: DocSearch | None = None
 _discussion_search: DiscussionSearch | None = None
 
 
-def _get_embedder() -> EmbeddingModel:
+def _get_embedder() -> Embedder:
     global _embedder
     if _embedder is None:
         _embedder = EmbeddingModel()
