@@ -233,6 +233,32 @@ models, and cannot be broken by a provider changing its free tier. It caught a
 real bug on first run: when every candidate was excluded by ID,
 `embed_documents([])` produced a 0-dim array and the cosine matmul raised.
 
+## The deployed demo is not exactly the benchmarked system
+
+Worth stating plainly, since the whole project is about measurement honesty.
+
+Every number above was produced with **bge-base-en-v1.5 running under
+PyTorch**. That does not fit a 512MB free-tier container — torch is ~465MB
+installed and the model ~400MB resident, and Render killed the first two
+deploys with exactly that error. ONNX fp16 did not help either: CPUs have no
+native fp16, so onnxruntime converts back to fp32 at load and the footprint
+reappeared (551MB measured, still over).
+
+The live demo therefore runs the same weights **quantised to int8**, which is
+the only variant that fits (279MB measured). Measured cost over 30 real eval
+questions:
+
+| | |
+|---|---|
+| Identical top-1 result | **26/30 (87%)** |
+| Identical top-5 set | 6/30 (20%) |
+| Mean top-5 overlap | **86%** |
+
+So it usually retrieves the same best match and mostly the same context — but
+not identically. **Do not read the 30.6% baseline as the demo's score.** To
+run the exact benchmarked system, use the local instructions above (the eval
+harness defaults to PyTorch bge and is unaffected).
+
 ## Known limitations
 
 - Free-tier quota caps throughput at ~26 eval items/day, so the 199-item

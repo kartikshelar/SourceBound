@@ -97,11 +97,25 @@ class OnnxEmbeddingModel:
     ~15MB and the fp16 graph is 209MB, so the whole serving image fits with
     room to spare.
 
-    VERIFIED EQUIVALENT, which is the entire point: fp16 ONNX embeddings score
-    cosine **1.000000** against the PyTorch model (int8 managed only 0.967),
-    and return byte-identical top-5 results on 5/5 probe queries against the
-    existing bge index. So the deployed system is the one the eval measured —
-    no re-indexing, no re-benchmarking, no asterisk on the reported numbers.
+    QUANTISED TO int8, and that is a real trade-off — stated here rather than
+    buried. fp16 was tried first and IS numerically exact (cosine 1.000000 vs
+    PyTorch), but it does not help on CPU: onnxruntime converts fp16 weights
+    back to fp32 to execute, so the 209MB file still expanded to ~400MB
+    resident and the container died at 551MB. Measured:
+
+        deps 104MB -> +fp16 session 500MB -> +collections 551MB   (OOM)
+        deps 103MB -> +int8 session 232MB -> +collections 279MB   (fits)
+
+    int8 stays int8 in memory, so it is the only variant that fits 512MB.
+
+    COST, measured over 30 real eval questions against the same index:
+        identical top-1     26/30 (87%)
+        identical top-5 set  6/30 (20%)
+        mean top-5 overlap        86%
+    So the deployed service usually retrieves the same best match and mostly
+    the same context, but NOT identically. The numbers in decisions.md were
+    produced with the PyTorch model; the deployed variant is close but is not
+    the benchmarked system, and the README says so.
 
     Pooling must match bge exactly: CLS token (index 0), then L2 normalise.
     Mean-pooling here would silently produce different vectors and quietly
