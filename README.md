@@ -7,6 +7,12 @@ rather than vibes.
 The interesting part is not the RAG pipeline. It is that **every component was
 measured, and most of the upgrades failed.** This repo keeps the failures.
 
+**Live demo: https://sourcebound.onrender.com**
+Free tier — the instance sleeps after ~15 min idle, so the first request can
+take ~60s to wake it. It also runs an int8-quantised model to fit 512MB, which
+is *close to* but not identical to the benchmarked system — see
+[The deployed demo is not exactly the benchmarked system](#the-deployed-demo-is-not-exactly-the-benchmarked-system).
+
 ---
 
 ## Headline results
